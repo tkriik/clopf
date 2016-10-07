@@ -1,5 +1,19 @@
 (ns clopf.core)
 
+(defn destruct-packet
+  "Validate the structure of a given byte array"
+  [structure bindings packet]
+  (let [[identifier length kind] (first structure)]
+    (if (and (not-empty structure) (>= (count packet) length))
+      (let [new-binding
+              (case kind
+                :string {identifier (apply str (map char (subvec packet 0 length)))})]
+        (destruct-packet
+          (rest structure)
+          (conj bindings new-binding)
+          (subvec packet length)))
+      bindings)))
+
 (defn too-long?
   [message]
   (< 5 (count message)))
