@@ -3,16 +3,20 @@
 (defn destruct-packet
   "Validate the structure of a given byte array"
   [structure bindings packet]
-  (let [[identifier length kind] (first structure)]
-    (if (and (not-empty structure) (>= (count packet) length))
-      (let [new-binding
-              (case kind
-                :string {identifier (apply str (map char (subvec packet 0 length)))})]
-        (destruct-packet
-          (rest structure)
-          (conj bindings new-binding)
-          (subvec packet length)))
-      bindings)))
+  (defn byte-array->str [a] (apply str (map char a)))
+  (let [[id length kind] (first structure)
+        packet-is-done (or (nil? length) (< (count packet) length))]
+    (cond
+      (and packet-is-done (not-empty structure)) nil
+      (not-empty structure)
+        (let [new-binding
+               (case kind
+                 :string {id (byte-array->str (subvec packet 0 length))})]
+          (destruct-packet
+            (rest structure)
+            (conj bindings new-binding)
+            (subvec packet length)))
+      :else bindings)))
 
 (defn too-long?
   [message]
